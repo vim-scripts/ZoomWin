@@ -1,7 +1,7 @@
 " ZoomWin: Brief-like ability to zoom into/out-of a window
 "  Author: Ron Aaron
 "          modified by Charles Campbell
-" Version: 18
+" Version: 19
 " History: see :he zoomwin-history
 
 " ---------------------------------------------------------------------
@@ -56,7 +56,6 @@ fun! ZoomWin()
         call s:GotoWinNum(s:winkeep)
         unlet s:winkeep
       endif
-	  let &ei=ei_keep
 
 	  if line(".") != s:origline || virtcol(".") != s:origcol
 	   " If the cursor hasn't moved from the original position,
@@ -68,6 +67,7 @@ fun! ZoomWin()
 	  " delete session file and variable holding its name
       call delete(s:sessionfile)
       unlet s:sessionfile
+	  let &ei=ei_keep
     endif
 
   else " there's more than one window - go to only-one-window mode
@@ -85,6 +85,8 @@ fun! ZoomWin()
 	endif
 
     " save window positioning commands
+    let ei_keep   = &ei
+	set ei=all
     windo let s:savedposn{winnr()}= s:SavePosn(1)
     call s:GotoWinNum(s:winkeep)
 
@@ -94,18 +96,16 @@ fun! ZoomWin()
     " save session
     let ssop_keep = &ssop
     let &ssop     = 'blank,help,winsize'
-    let ei_keep   = &ei
     exe 'mksession! '.s:sessionfile
-    set lz
-     set ei=all
+    set lz ei=all bh=
      exe "new! ".s:sessionfile
      v/wincmd\|split\|resize/d
      w!
 	 bw!
     set nolz
     let &ssop = ssop_keep
-    let &ei   = ei_keep
     only!
+    let &ei   = ei_keep
     echomsg expand("%")
   endif
 
@@ -146,14 +146,14 @@ fun! s:SavePosn(savewinhoriz)
    let settings= ""
    if &bh != ""
    	let settings="bh=".&bh
-	setlocal bh=
+	setlocal bh=hide
    endif
    if !&bl
    	let settings= settings." nobl"
 	setlocal bl
    endif
-   if &bt == "quickfix"
-   	let settings= settings." bt=quickfix"
+   if &bt != ""
+   	let settings= settings." bt=".&bt
 	setlocal bt=
    endif
    if settings != ""
@@ -240,10 +240,10 @@ finish
 " ---------------------------------------------------------------------
 " Put the help after the HelpExtractorDoc label...
 " HelpExtractorDoc:
-*ZoomWin.txt*	Zoom into/out-of a window		May 24, 2004
+*ZoomWin.txt*	Zoom into/out-of a window		May 26, 2004
 Authors: Charles E. Campbell, Jr.			*zoomwin*
          Ron Aaron		
-Version: 18
+Version: 19
 
 ==============================================================================
 1. Usage						*zoomwin-usage*
@@ -265,6 +265,11 @@ Version: 18
 ==============================================================================
 3. History						*zoomwin-history*
 
+	v19 May 26, 2004 : * bugfix - winmanager has events firing that,
+	                     amongst other things, reset the bufhidden
+			     option to delete for some windows while
+			     ZoomWin worked.  ZoomWin now works
+			     successfully with winmanager.
 	v18 May 20, 2004 : * bugfix - didn't adversely affect anything, but
 	                     ZoomWin was deleting its session file twice.
 			   * bugfix -- a multi-source file + minibufexplorer

@@ -1,7 +1,7 @@
 " ZoomWin: Brief-like ability to zoom into/out-of a window
 "  Author: Ron Aaron
 "          modified by Charles Campbell
-" Version: 16
+" Version: 17
 " History: see :he zoomwin-history
 
 " ---------------------------------------------------------------------
@@ -16,6 +16,7 @@ if !hasmapto("<Plug>ZoomWin")
  nmap <unique> <c-w>o  <Plug>ZoomWin
 endif
 nnoremap <silent> <script> <Plug>ZoomWin :set lz<CR>:call ZoomWin()<CR>:set nolz<CR>
+com! ZoomWin :set lz|silent call ZoomWin()|set nolz
 
 au VimLeave * call <SID>CleanupSessionFile()
 
@@ -221,14 +222,15 @@ finish
 " Put the help after the HelpExtractorDoc label...
 " HelpExtractorDoc:
 *ZoomWin.txt*	Zoom into/out-of a window		Dec 22, 2003
-Author: Ron Aaron					*zoomwin*
-        Charles E. Campbell, Jr.
-Version: 16
+Authors: Charles E. Campbell, Jr.			*zoomwin*
+         Ron Aaron		
+Version: 17
 
 ==============================================================================
 1. Usage						*zoomwin-usage*
 
-   :call ZoomWin()<CR>
+   :call ZoomWin()
+   :ZoomWin
    <c-w>o                
 
    Either of these two commands will cause current window to be selected
@@ -244,6 +246,8 @@ Version: 16
 ==============================================================================
 3. History						*zoomwin-history*
 
+	v17 Mar 26, 2004 : ZoomWin command installed.  Works nicely with
+	                   taglist:  vim +Tlist +ZoomWin filename
 	v16 Dec 22, 2003 : handles bufhidden and nobl windows (TagList support).
 	                   Now also works with quickfix window (:copen) but
 			   still not with |cmdline-window| (q:)

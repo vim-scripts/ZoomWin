@@ -1,7 +1,7 @@
 " ZoomWin: Brief-like ability to zoom into/out-of a window
 "  Author: Ron Aaron
 "          modified by Charles Campbell
-" Version: 17
+" Version: 18
 " History: see :he zoomwin-history
 
 " ---------------------------------------------------------------------
@@ -26,6 +26,9 @@ au VimLeave * call <SID>CleanupSessionFile()
 "          The original was by Ron Aaron and has been extensively
 "          modified by Charles E. Campbell.
 fun! ZoomWin()  
+"  let g:decho_hide= 1		"Decho
+"  call Dfunc("ZoomWin() winbufnr(2)=".winbufnr(2))
+
   let keep_hidden = &hidden
   let keep_write  = &write
   if &wmh == 0 || &wmw == 0
@@ -42,8 +45,9 @@ fun! ZoomWin()
       let sponly= s:SavePosn(0)
 
       " read session file to restore window layout
+	  let ei_keep= &ei
+	  set ei=all
       exe 'silent! so '.s:sessionfile
-      silent! call delete(s:sessionfile)
       let v:this_session= s:sesskeep
 
       if exists("s:savedposn1")
@@ -52,12 +56,16 @@ fun! ZoomWin()
         call s:GotoWinNum(s:winkeep)
         unlet s:winkeep
       endif
+	  let &ei=ei_keep
+
 	  if line(".") != s:origline || virtcol(".") != s:origcol
 	   " If the cursor hasn't moved from the original position,
-	   " then let the position remain that of the multi-window layout
-	   " restoration.
+	   " then let the position remain what it was in the original
+	   " multi-window layout.
        call s:RestorePosn(sponly)
 	  endif
+
+	  " delete session file and variable holding its name
       call delete(s:sessionfile)
       unlet s:sessionfile
     endif
@@ -72,6 +80,7 @@ fun! ZoomWin()
 	" doesn't work with the command line window (normal mode q:)
 	if &bt == "nofile" && expand("%") == "command-line"
 	 echoerr "***error*** ZoomWin doesn't work with the command line window"
+"     call Dret("ZoomWin")
 	 return
 	endif
 
@@ -107,6 +116,7 @@ fun! ZoomWin()
    let &wmh= keep_wmh
    let &wmw= keep_wmw
   endif
+"  call Dret("ZoomWin")
 endfun
 
 " ---------------------------------------------------------------------
@@ -115,6 +125,7 @@ endfun
 "          has the commands necessary to restore the view
 "          of the current window.
 fun! s:SavePosn(savewinhoriz)
+"  call Dfunc("SavePosn(savewinhoriz=".a:savewinhoriz.") file<".expand("%").">")
   let swline    = line(".")
   let swcol     = col(".")
   let swwline   = winline()-1
@@ -150,6 +161,7 @@ fun! s:SavePosn(savewinhoriz)
    endif
 
   endif
+"  call Dret("SavePosn savedposn<".savedposn.">")
   return savedposn
 endfun
 
@@ -157,7 +169,9 @@ endfun
 
 " s:RestorePosn: this function restores noname and scratch windows
 fun! s:RestorePosn(savedposn)
+"  call Dfunc("RestorePosn(savedposn<".a:savedposn.">) file<".expand("%").">")
   exe a:savedposn
+"  call Dret("RestorePosn")
 endfun
 
 " ---------------------------------------------------------------------
@@ -165,19 +179,24 @@ endfun
 " CleanupSessionFile: if you exit Vim before cleaning up the
 "                     supposed-to-be temporary session file
 fun! s:CleanupSessionFile()
+"  call Dfunc("CleanupSessionFile()")
   if exists("s:sessionfile") && filereadable(s:sessionfile)
+"   call Decho("sessionfile exists and is readable; deleting it")
    silent! call delete(s:sessionfile)
    unlet s:sessionfile
   endif
+"  call Dret("CleanupSessionFile")
 endfun
 
 " ---------------------------------------------------------------------
 
 " GotoWinNum: this function puts cursor into specified window
 fun! s:GotoWinNum(winnum)
+"  call Dfunc("GotoWinNum(winnum=".a:winnum.") winnr=".winnr())
   if a:winnum != winnr()
    exe a:winnum."wincmd w"
   endif
+"  call Dret("GotoWinNum")
 endfun
 
 " ---------------------------------------------------------------------
@@ -221,10 +240,10 @@ finish
 " ---------------------------------------------------------------------
 " Put the help after the HelpExtractorDoc label...
 " HelpExtractorDoc:
-*ZoomWin.txt*	Zoom into/out-of a window		Dec 22, 2003
+*ZoomWin.txt*	Zoom into/out-of a window		May 24, 2004
 Authors: Charles E. Campbell, Jr.			*zoomwin*
          Ron Aaron		
-Version: 17
+Version: 18
 
 ==============================================================================
 1. Usage						*zoomwin-usage*
@@ -246,6 +265,16 @@ Version: 17
 ==============================================================================
 3. History						*zoomwin-history*
 
+	v18 May 20, 2004 : * bugfix - didn't adversely affect anything, but
+	                     ZoomWin was deleting its session file twice.
+			   * bugfix -- a multi-source file + minibufexplorer
+			     + Taglist interaction bug -- minibufexplorer's
+			     autocmd events were firing, generating a new
+			     window while ZoomWin was attempting to restore
+			     the display.  ZoomWin didn't have restoration
+			     information for the new window and so reported
+			     an error.  Events are now temporarily disabled
+			     while ZoomWin is restoring the layout.
 	v17 Mar 26, 2004 : ZoomWin command installed.  Works nicely with
 	                   taglist:  vim +Tlist +ZoomWin filename
 	v16 Dec 22, 2003 : handles bufhidden and nobl windows (TagList support).

@@ -1,8 +1,8 @@
 " ZoomWin:	Brief-like ability to zoom into/out-of a window
 " Author:	Charles Campbell
 "			original version by Ron Aaron
-" Date:		May 10, 2005
-" Version:	21
+" Date:		Apr 07, 2006
+" Version:	22
 " History: see :help zoomwin-history {{{1
 " GetLatestVimScripts: 508 1 :AutoInstall: ZoomWin.vim
 
@@ -12,8 +12,9 @@ if &cp || exists("g:loaded_ZoomWin")
  finish
 endif
 let s:keepcpo        = &cpo
-let g:loaded_ZoomWin = "v21"
+let g:loaded_ZoomWin = "v22"
 set cpo&vim
+"DechoTabOn
 
 " ---------------------------------------------------------------------
 "  Public Interface: {{{1
@@ -72,6 +73,7 @@ fun! ZoomWin()
 
   if winbufnr(2) == -1
     " there's only one window - restore to multiple-windows mode {{{2
+"	call Decho("there's only one window - restore to multiple windows")
 
     if exists("s:sessionfile") && filereadable(s:sessionfile)
 	  " save position in current one-window-only
@@ -84,6 +86,7 @@ fun! ZoomWin()
 	  let ei_keep= &ei
 	  set ei=all
       exe 'silent! so '.s:sessionfile
+"	  Decho("@@<".@@.">")
       let v:this_session= s:sesskeep
 
       if exists("s:savedposn1")
@@ -110,6 +113,7 @@ fun! ZoomWin()
     endif
 
   else " there's more than one window - go to only-one-window mode {{{2
+"	call Decho("there's multiple windows - goto one-window-only")
 
     let s:winkeep    = winnr()
     let s:sesskeep   = v:this_session
@@ -120,11 +124,13 @@ fun! ZoomWin()
 "     call Dret("ZoomWin : commandline window error")
 	 return
 	endif
+"	call Decho("1: @@<".@@.">")
 
 	" disable all events (autocmds)
 "	call Decho("disable events")
     let ei_keep= &ei
 	set ei=all
+"	call Decho("2: @@<".@@.">")
 
     " save window positioning commands
 "	call Decho("save window positioning commands")
@@ -132,26 +138,62 @@ fun! ZoomWin()
     call s:GotoWinNum(s:winkeep)
 
     " set up name of session file
+"	call Decho("3: @@<".@@.">")
     let s:sessionfile= tempname()
+"	call Decho("4: @@<".@@.">")
 
     " save session
 "	call Decho("save session")
     let ssop_keep = &ssop
     let &ssop     = 'blank,help,winsize'
+"	call Decho("5: @@<".@@.">")
     exe 'mksession! '.s:sessionfile
+"	call Decho("6: @@<".@@.">")
+	let keepyy= @@
+	let keepy0= @0
+	let keepy1= @1
+	let keepy2= @2
+	let keepy3= @3
+	let keepy4= @4
+	let keepy5= @5
+	let keepy6= @6
+	let keepy7= @7
+	let keepy8= @8
+	let keepy9= @9
     set lz ei=all bh=
+	if v:version >= 700
+     exe "keepalt keepmarks new! ".s:sessionfile
+     keepjumps keepmarks v/wincmd\|split\|resize/d
+     keepalt w!
+     keepalt bw!
+	else
      exe "new! ".s:sessionfile
      v/wincmd\|split\|resize/d
      w!
-	 bw!
+     bw!
+    endif
+	let @@= keepyy
+	let @0= keepy0
+	let @1= keepy1
+	let @2= keepy2
+	let @3= keepy3
+	let @4= keepy4
+	let @5= keepy5
+	let @6= keepy6
+	let @7= keepy7
+	let @8= keepy8
+	let @9= keepy9
+"	call Decho("7: @@<".@@.">")
 
     " restore user's session options and restore event handling
 "	call Decho("restore user session options and event handling")
     set nolz
     let &ssop = ssop_keep
-    only!
+    silent! only!
+"	call Decho("8: @@<".@@.">")
     let &ei   = ei_keep
     echomsg expand("%")
+"	call Decho("9: @@<".@@.">")
   endif
 
   " restore user option settings {{{2
@@ -178,6 +220,12 @@ endfun
 fun! s:SavePosn(savewinhoriz)
 "  call Dfunc("SavePosn(savewinhoriz=".a:savewinhoriz.") file<".expand("%").">")
   let swline    = line(".")
+  if swline == 1 && getline(1) == ""
+   " empty buffer
+   let savedposn= "silent b ".winbufnr(0)
+"   call Dret("SavePosn savedposn<".savedposn.">")
+   return savedposn
+  endif
   let swcol     = col(".")
   let swwline   = winline()-1
   let swwcol    = virtcol(".") - wincol()
@@ -315,18 +363,30 @@ unlet s:keepcpo
 " HelpExtractor:
 "  Author:	Charles E. Campbell, Jr.
 "  Version:	3
-"  Date:	Sep 09, 2004
+"  Date:	May 25, 2005
 "
 "  History:
+"    v3 May 25, 2005 : requires placement of code in plugin directory
+"                      cpo is standardized during extraction
 "    v2 Nov 24, 2003 : On Linux/Unix, will make a document directory
 "                      if it doesn't exist yet
 "
 " GetLatestVimScripts: 748 1 HelpExtractor.vim
 " ---------------------------------------------------------------------
 set lz
-let s:keepcpo= &cpo
+let s:HelpExtractor_keepcpo= &cpo
 set cpo&vim
-let docdir = substitute(expand("<sfile>:r").".txt",'\<plugin[/\\].*$','doc','')
+let docdir = expand("<sfile>:r").".txt"
+if docdir =~ '\<plugin\>'
+ let docdir = substitute(docdir,'\<plugin[/\\].*$','doc','')
+else
+ if has("win32")
+  echoerr expand("<sfile>:t").' should first be placed in your vimfiles\plugin directory'
+ else
+  echoerr expand("<sfile>:t").' should first be placed in your .vim/plugin directory'
+ endif
+ finish
+endif
 if !isdirectory(docdir)
  if has("win32")
   echoerr 'Please make '.docdir.' directory first'
@@ -358,17 +418,21 @@ set nolz
 unlet docdir
 unlet curfile
 "unlet docfile
-let &cpo= s:keepcpo
-unlet s:keepcpo
+let &cpo= s:HelpExtractor_keepcpo
+unlet s:HelpExtractor_keepcpo
 finish
 
 " ---------------------------------------------------------------------
 " Put the help after the HelpExtractorDoc label...
 " HelpExtractorDoc:
-*ZoomWin.txt*	Zoom into/out-of a window		May 10, 2005
+*ZoomWin.txt*	Zoom into/out-of a window		Apr 10, 2006
 Authors: Charles E. Campbell, Jr.			*zoomwin*
          Ron Aaron
 Version: 21
+Copyright: (c) 2004-2005 by Charles E. Campbell, Jr.	*zoomwin-copyright*
+           The VIM LICENSE applies to ZoomWin.vim and ZoomWin.txt
+           (see |copyright|) except use "ZoomWin" instead of "Vim"
+	   No warranty, express or implied.  Use At-Your-Own-Risk.
 
 ==============================================================================
 1. Usage						*zoomwin-usage*
@@ -393,6 +457,12 @@ Version: 21
 ==============================================================================
 3. History						*zoomwin-history*
 
+	v22 Apr 10, 2006 : * "only" was occasionally issuing an "Already one
+	                     window" message, which is now prevented
+			   * SavePosn() issued error message when handling an
+			     empty buffer
+			   * saves yank registers and restores them on each
+			     zoom/unzoom
 	v21 Oct 12, 2004 : * v14 fixed a bug when wmw and/or wmv equal to 0;
 			     v21 will invoke the patch only if the version <= 603.
 			     For vim version 6.3 users, this fix allows more files

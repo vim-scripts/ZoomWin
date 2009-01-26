@@ -1,8 +1,7 @@
-*ZoomWin.txt*	Zoom into/out-of a window		Apr 10, 2006
+*ZoomWin.txt*	Zoom into/out-of a window		Jan 26, 2009
 Authors: Charles E. Campbell, Jr.			*zoomwin*
          Ron Aaron
-Version: 21
-Copyright: (c) 2004-2005 by Charles E. Campbell, Jr.	*zoomwin-copyright*
+Copyright: (c) 2004-2008 by Charles E. Campbell, Jr.	*zoomwin-copyright*
            The VIM LICENSE applies to ZoomWin.vim and ZoomWin.txt
            (see |copyright|) except use "ZoomWin" instead of "Vim"
 	   No warranty, express or implied.  Use At-Your-Own-Risk.
@@ -30,6 +29,15 @@ Copyright: (c) 2004-2005 by Charles E. Campbell, Jr.	*zoomwin-copyright*
 ==============================================================================
 3. History						*zoomwin-history*
 
+	v23 Apr 24, 2008 : * when |'scrollbind'| was activated: when ZoomWin
+			     attempted to restore multiple-windows, the cursor
+			     position was incorrect.  Fixed.
+	    Jan 02, 2009   * included some more things in the session file
+	                   * broke ZoomWin into an plugin + autoload pair
+			   * (Ingo Karkat) contributed a patch to retain the
+			     the search pattern before zooming
+			   * (Ingo Karkat) contributed a patch to detect the
+			     vim 7.2 name for the command line window
 	v22 Apr 10, 2006 : * "only" was occasionally issuing an "Already one
 	                     window" message, which is now prevented
 			   * SavePosn() issued error message when handling an

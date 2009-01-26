@@ -1,8 +1,8 @@
 " ZoomWin:	Brief-like ability to zoom into/out-of a window
 " Author:	Charles Campbell
 "			original version by Ron Aaron
-" Date:		Apr 07, 2006
-" Version:	22
+" Date:		Jan 26, 2009
+" Version:	23
 " History: see :help zoomwin-history {{{1
 " GetLatestVimScripts: 508 1 :AutoInstall: ZoomWin.vim
 
@@ -11,29 +11,28 @@
 if &cp || exists("g:loaded_ZoomWin")
  finish
 endif
+if v:version < 702
+ echohl WarningMsg
+ echo "***warning*** this version of ZoomWin needs vim 7.2"
+ echohl Normal
+ finish
+endif
 let s:keepcpo        = &cpo
-let g:loaded_ZoomWin = "v22"
+let g:loaded_ZoomWin = "v23"
 set cpo&vim
 "DechoTabOn
 
-" ---------------------------------------------------------------------
-"  Public Interface: {{{1
-if !hasmapto("<Plug>ZoomWin")
- nmap <unique> <c-w>o  <Plug>ZoomWin
-endif
-nnoremap <silent> <script> <Plug>ZoomWin :set lz<CR>:silent call ZoomWin()<CR>:set nolz<CR>
-com! ZoomWin :set lz|silent call ZoomWin()|set nolz
-
-au VimLeave * call <SID>CleanupSessionFile()
+" =====================================================================
+"  Functions: {{{1
 
 " ---------------------------------------------------------------------
-" ZoomWin: toggles between a single-window and a multi-window layout {{{1
+" ZoomWin#ZoomWin: toggles between a single-window and a multi-window layout {{{2
 "          The original version was by Ron Aaron.
-fun! ZoomWin()
+fun! ZoomWin#ZoomWin()
 "  let g:decho_hide= 1		"Decho
-"  call Dfunc("ZoomWin() winbufnr(2)=".winbufnr(2))
+"  call Dfunc("ZoomWin#ZoomWin() winbufnr(2)=".winbufnr(2))
 
-  " if the vim doesn't have +mksession, only a partial zoom is available {{{2
+  " if the vim doesn't have +mksession, only a partial zoom is available {{{3
   if !has("mksession")
    if !exists("s:partialzoom")
     echomsg "missing the +mksession feature; only a partial zoom is available"
@@ -51,14 +50,14 @@ fun! ZoomWin()
 	let s:winrestore = winrestcmd()
 	res
    endif
-"  call Dret("ZoomWin : partialzoom=".s:partialzoom)
+"  call Dret("ZoomWin#ZoomWin : partialzoom=".s:partialzoom)
    return
   endif
 
-  " Close certain windows {{{2
+  " Close certain windows {{{3
   call s:ZoomWinPreserve(0)
 
-  " save options.  Force window minimum height/width to be >= 1 {{{2
+  " save options.  Force window minimum height/width to be >= 1 {{{3
   let keep_hidden = &hidden
   let keep_write  = &write
 
@@ -72,7 +71,7 @@ fun! ZoomWin()
   set hidden write
 
   if winbufnr(2) == -1
-    " there's only one window - restore to multiple-windows mode {{{2
+    " there's only one window - restore to multiple-windows mode {{{3
 "	call Decho("there's only one window - restore to multiple windows")
 
     if exists("s:sessionfile") && filereadable(s:sessionfile)
@@ -85,7 +84,7 @@ fun! ZoomWin()
       " source session file to restore window layout
 	  let ei_keep= &ei
 	  set ei=all
-      exe 'silent! so '.s:sessionfile
+	  exe 'silent! so '.fnameescape(s:sessionfile)
 "	  Decho("@@<".@@.">")
       let v:this_session= s:sesskeep
 
@@ -112,16 +111,16 @@ fun! ZoomWin()
 	  let &ei=ei_keep
     endif
 
-  else " there's more than one window - go to only-one-window mode {{{2
+  else " there's more than one window - go to only-one-window mode {{{3
 "	call Decho("there's multiple windows - goto one-window-only")
 
     let s:winkeep    = winnr()
     let s:sesskeep   = v:this_session
 
 	" doesn't work with the command line window (normal mode q:)
-	if &bt == "nofile" && expand("%") == "command-line"
-	 echoerr "***error*** ZoomWin doesn't work with the command line window"
-"     call Dret("ZoomWin : commandline window error")
+ 	if &bt == "nofile" && expand("%") == (v:version < 702 ? 'command-line' : '[Command Line]')
+	 echoerr "***error*** ZoomWin#ZoomWin doesn't work with the ".expand("%")." window"
+"     call Dret("ZoomWin#ZoomWin : ".expand('%')." window error")
 	 return
 	endif
 "	call Decho("1: @@<".@@.">")
@@ -145,9 +144,9 @@ fun! ZoomWin()
     " save session
 "	call Decho("save session")
     let ssop_keep = &ssop
-    let &ssop     = 'blank,help,winsize'
+	let &ssop     = 'blank,help,winsize,folds,globals,localoptions,options'
 "	call Decho("5: @@<".@@.">")
-    exe 'mksession! '.s:sessionfile
+	exe 'mksession! '.fnameescape(s:sessionfile)
 "	call Decho("6: @@<".@@.">")
 	let keepyy= @@
 	let keepy0= @0
@@ -162,12 +161,20 @@ fun! ZoomWin()
 	let keepy9= @9
     set lz ei=all bh=
 	if v:version >= 700
-     exe "keepalt keepmarks new! ".s:sessionfile
+	 try
+	  exe "keepalt keepmarks new! ".fnameescape(s:sessionfile)
+	 catch /^Vim\%((\a\+)\)\=:E/
+	  echoerr "Too many windows"
+      silent! call delete(s:sessionfile)
+      unlet s:sessionfile
+"      call Dret("ZoomWin#ZoomWin : too many windows")
+      return
+	 endtry
      silent! keepjumps keepmarks v/wincmd\|split\|resize/d
      keepalt w!
      keepalt bw!
 	else
-     exe "new! ".s:sessionfile
+	 exe "new! ".fnameescape(s:sessionfile)
      v/wincmd\|split\|resize/d
      w!
      bw!
@@ -183,6 +190,8 @@ fun! ZoomWin()
 	let @7= keepy7
 	let @8= keepy8
 	let @9= keepy9
+    call histdel('search', -1)
+    let @/ = histget('search', -1)
 "	call Decho("7: @@<".@@.">")
 
     " restore user's session options and restore event handling
@@ -196,7 +205,7 @@ fun! ZoomWin()
 "	call Decho("9: @@<".@@.">")
   endif
 
-  " restore user option settings {{{2
+  " restore user option settings {{{3
 "  call Decho("restore user option settings")
   let &hidden= keep_hidden
   let &write = keep_write
@@ -207,14 +216,14 @@ fun! ZoomWin()
    endif
   endif
 
-  " Re-open certain windows {{{2
+  " Re-open certain windows {{{3
   call s:ZoomWinPreserve(1)
 
-"  call Dret("ZoomWin")
+"  call Dret("ZoomWin#ZoomWin")
 endfun
 
 " ---------------------------------------------------------------------
-" SavePosn: this function sets up a savedposn variable that {{{1
+" SavePosn: this function sets up a savedposn variable that {{{2
 "          has the commands necessary to restore the view
 "          of the current window.
 fun! s:SavePosn(savewinhoriz)
@@ -265,28 +274,34 @@ fun! s:SavePosn(savewinhoriz)
 endfun
 
 " ---------------------------------------------------------------------
-" s:RestorePosn: this function restores noname and scratch windows {{{1
+" s:RestorePosn: this function restores noname and scratch windows {{{2
 fun! s:RestorePosn(savedposn)
 "  call Dfunc("RestorePosn(savedposn<".a:savedposn.">) file<".expand("%").">")
-  exe a:savedposn
+  if &scb
+   setlocal noscb
+   exe a:savedposn
+   setlocal scb
+  else
+   exe a:savedposn
+  endif
 "  call Dret("RestorePosn")
 endfun
 
 " ---------------------------------------------------------------------
-" CleanupSessionFile: if you exit Vim before cleaning up the {{{1
+" CleanupSessionFile: if you exit Vim before cleaning up the {{{2
 "                     supposed-to-be temporary session file
-fun! s:CleanupSessionFile()
-"  call Dfunc("CleanupSessionFile()")
+fun! ZoomWin#CleanupSessionFile()
+"  call Dfunc("ZoomWin#CleanupSessionFile()")
   if exists("s:sessionfile") && filereadable(s:sessionfile)
 "   call Decho("sessionfile exists and is readable; deleting it")
    silent! call delete(s:sessionfile)
    unlet s:sessionfile
   endif
-"  call Dret("CleanupSessionFile")
+"  call Dret("ZoomWin#CleanupSessionFile")
 endfun
 
 " ---------------------------------------------------------------------
-" GotoWinNum: this function puts cursor into specified window {{{1
+" GotoWinNum: this function puts cursor into specified window {{{2
 fun! s:GotoWinNum(winnum)
 "  call Dfunc("GotoWinNum(winnum=".a:winnum.") winnr=".winnr())
   if a:winnum != winnr()
@@ -297,7 +312,7 @@ endfun
 
 
 " ---------------------------------------------------------------------
-" ZoomWinPreserve:  This function, largely written by David Fishburn, {{{1
+" ZoomWinPreserve:  This function, largely written by David Fishburn, {{{2
 "   allows ZoomWin to "preserve" certain windows:
 "
 "   	TagList, by Yegappan Lakshmanan
@@ -355,8 +370,11 @@ fun! s:ZoomWinPreserve(open)
 "  call Dret("ZoomWinPreserve")
 endfun
 
+" =====================================================================
+"  Restore: {{{1
 let &cpo= s:keepcpo
 unlet s:keepcpo
+
 " ---------------------------------------------------------------------
 "  Modelines: {{{1
 " vim: ts=4 fdm=marker

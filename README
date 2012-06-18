@@ -21,7 +21,7 @@ The idea is to make it easy to zoom into and out of a window.  ZoomWin supports 
  
  * Session files are guaranteed to be unique to each vim session, so multiple vims can use zoom-in/out without interfering with one another
 
-A later version may be available at http://mysite.verizon.net/astronaut/vim/index.html#ZOOMWIN .
+A later version may be available at http://www.drchip.org/astronaut/vim/index.html#ZOOMWIN .
 
 When zooming in, ZoomWin's window is full sized, with no loss of screen space to status lines for other windows, unlike vimscript#1280 (ToggleOnly), for those vims compiled with the +mksession feature.  For those vims without that feature, v21 ZoomWin now supports partial-zoom-in (leaves a status line behind for each window).
 

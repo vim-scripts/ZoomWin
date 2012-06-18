@@ -1,7 +1,7 @@
-*ZoomWin.txt*	Zoom into/out-of a window		Jan 26, 2009
+*ZoomWin.txt*	Zoom into/out-of a window		Jun 18, 2012
 Authors: Charles E. Campbell, Jr.			*zoomwin*
          Ron Aaron
-Copyright: (c) 2004-2008 by Charles E. Campbell, Jr.	*zoomwin-copyright*
+Copyright: (c) 2004-2012 by Charles E. Campbell, Jr.	*zoomwin-copyright*
            The VIM LICENSE applies to ZoomWin.vim and ZoomWin.txt
            (see |copyright|) except use "ZoomWin" instead of "Vim"
 	   No warranty, express or implied.  Use At-Your-Own-Risk.
@@ -15,20 +15,70 @@ Copyright: (c) 2004-2008 by Charles E. Campbell, Jr.	*zoomwin-copyright*
 
    Either of the two commands or the normal mode <c-w>o will toggle between
 	* selecting the current window for display as the only window or
-	* to restore the original multiple-window view.
+	* restoring the original multiple-window view.
+
 
 ==============================================================================
 2. Setup						*zoomwin-setup*
 
-   Simply put ZoomWin.vim into your .vim/plugin directory (you may need to
-   make such a directory first).  Under Windows that should be
-   vimfiles\plugin.  ZoomWin now uses the HelpExtractor method to
-   automatically extract help and to make it known to vim by running helptags
-   on it.
+   ZoomWin comes as a vimball; to install it, simply >
+
+       vim ZoomWin.vba.gz
+       :so %
+       :q
+<
+   Your .vimrc needs to have, at least: >
+
+   	set nocp
+	filetype plugin on
+<
+   (see |'nocp'|, |:filetype|, and |filetype-plugin-on| for an explanation of
+   these commands)
 
 ==============================================================================
-3. History						*zoomwin-history*
+3. Options						*zoomwin-options*
 
+   *g:ZoomWin_funcref* : this variable is used as a function reference
+			 (|Funcref|) or as a |List| of function references.
+			 It is called with a single argument: >
+			   0 : multi-window display; not zoomed in
+			   1 : single-window display; zoomed in
+<			 What this does is permits ZoomWin users to have a
+			 function called whenever ZoomWin changes state.
+			 As an example, consider having the status line
+			 indicate whether one is ZoomWin'd in or not: >
+			    set stl=Normal
+			    fun! ZWStatline(state)
+			      if a:state
+			       set stl=ZoomWin
+			      else
+			       set stl=Normal
+			      endif
+			    endfun
+			    if !exists("g:ZoomWin_funcref")
+			     let g:ZoomWin_funcref= function("ZWStatline")
+			    endif
+<			 The function, ZWStatline(), is called by ZoomWin()
+			 every time it changes state.
+
+	*g:zoomwin_preserve_taglist*	open and close a taglist window on
+	                              zooms
+
+	*g:zoomwin_preserve_winmanager*	open and close winmanager a window on
+	                              zooms
+			
+
+==============================================================================
+4. History						*zoomwin-history*
+
+	v24 Jan 29, 2009 : * |g:ZoomWin_funcref| supported
+	    May 22, 2009   * supports the saving and restoring of window
+			     variables across zooms
+	    Oct 11, 2009   * The state wasn't being passed along to
+			     g:ZoomWin_funcref as intended.  Fixed.
+	    Jul 09, 2010   * Put an exists() test into s:RestoreWinVars()
+	    Jan 18, 2011   * (reported by talek) bypass winfixheight option
+	    Apr 06, 2011   * Saves and restores local options for every window
 	v23 Apr 24, 2008 : * when |'scrollbind'| was activated: when ZoomWin
 			     attempted to restore multiple-windows, the cursor
 			     position was incorrect.  Fixed.
@@ -38,6 +88,8 @@ Copyright: (c) 2004-2008 by Charles E. Campbell, Jr.	*zoomwin-copyright*
 			     the search pattern before zooming
 			   * (Ingo Karkat) contributed a patch to detect the
 			     vim 7.2 name for the command line window
+			   * too many files (more than the screen rows)
+			     caused restoration problems.
 	v22 Apr 10, 2006 : * "only" was occasionally issuing an "Already one
 	                     window" message, which is now prevented
 			   * SavePosn() issued error message when handling an

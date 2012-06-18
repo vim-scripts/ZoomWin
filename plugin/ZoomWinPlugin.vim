@@ -1,8 +1,8 @@
 " ZoomWin:	Brief-like ability to zoom into/out-of a window
 " Author:	Charles Campbell
 "			original version by Ron Aaron
-" Date:		Jan 16, 2009
-" Version:	23e	ASTRO-ONLY
+" Date:		Apr 07, 2011
+" Version:	24iNR	NOT RELEASED
 " History: see :help zoomwin-history {{{1
 " GetLatestVimScripts: 508 1 :AutoInstall: ZoomWin.vim
 
@@ -18,7 +18,7 @@ if v:version < 702
  finish
 endif
 let s:keepcpo              = &cpo
-let g:loaded_ZoomWinPlugin = "v23"
+let g:loaded_ZoomWinPlugin = "v24"
 set cpo&vim
 "DechoTabOn
 
